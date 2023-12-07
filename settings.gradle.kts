@@ -1,1 +1,6 @@
-rootProject.name = "mirai-console-plugin-template"
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+    }
+}
+rootProject.name = "mirai-console-automations"

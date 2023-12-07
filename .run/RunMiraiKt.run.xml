@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="RunMiraiKt" type="JetRunConfigurationType" nameIsGenerated="true">
+  <configuration default="false" name="RunMiraiKt" type="JetRunConfigurationType">
     <option name="MAIN_CLASS_NAME" value="org.example.mirai.plugin.RunMiraiKt" />
     <module name="mirai-console-plugin-template.test" />
     <shortenClasspath name="NONE" />

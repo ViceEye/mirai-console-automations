@@ -18,9 +18,10 @@ import net.mamoe.mirai.console.data.value
 object MainSetting : ReadOnlyPluginConfig("setting") {
 
     /**
-     * debug 模式
+     * local 模式
+     * 为 true 时在启动后完成续火直接关闭
      */
-    val debug: Boolean by value(false)
+    val local: Boolean by value(true)
 
     /**
      * RenewTarget 配置

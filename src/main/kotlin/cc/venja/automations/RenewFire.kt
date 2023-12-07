@@ -1,5 +1,7 @@
 package cc.venja.automations
 
+import kotlinx.coroutines.launch
+import net.mamoe.mirai.Bot
 import net.mamoe.mirai.console.MiraiConsole
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
@@ -7,6 +9,9 @@ import net.mamoe.mirai.console.util.ConsoleExperimentalApi
 import net.mamoe.mirai.event.GlobalEventChannel
 import net.mamoe.mirai.event.events.BotOnlineEvent
 import net.mamoe.mirai.utils.info
+import java.util.*
+import kotlin.concurrent.scheduleAtFixedRate
+
 
 object RenewFire : KotlinPlugin(
         JvmPluginDescription(
@@ -20,9 +25,6 @@ object RenewFire : KotlinPlugin(
         }
 ) {
 
-    private var totalActions: Int = 0
-    private var proceedActions: Int = 0
-
     @OptIn(ConsoleExperimentalApi::class)
     override fun onEnable() {
         MainSetting.reload()
@@ -32,19 +34,41 @@ object RenewFire : KotlinPlugin(
         logger.info { "Event channel registered" }
 
         with(MainSetting) {
-            totalActions = settings.size
-            eventChannel.subscribeAlways<BotOnlineEvent> {
-                if (settings[bot.id.toString()] !== null) {
-                    settings[bot.id.toString()]?.forEach { (key, value) ->
-                        bot.getFriend(key.toLong())?.sendMessage(value)
+            if (local) {
+                // When locally running
+
+                val totalActions = settings.size
+                var proceedActions = 0
+                eventChannel.subscribeAlways<BotOnlineEvent> {
+                    if (settings[bot.id.toString()] !== null) {
+                        settings[bot.id.toString()]?.forEach { (key, value) ->
+                            bot.getFriend(key.toLong())?.sendMessage(value)
+                        }
+                        proceedActions += 1
                     }
-                    proceedActions+=1
+                    if (totalActions == proceedActions) {
+                        MiraiConsole.shutdown()
+                    }
                 }
-                if (totalActions == proceedActions) {
-                    MiraiConsole.shutdown()
+            } else {
+                // When server running
+
+                val timer = Timer("FireRenewTimer", true)
+                timer.scheduleAtFixedRate(0, (0.5 * 60 * 60 * 1000).toLong()) { // 每0.5小时执行一次
+                    val currentTime = Calendar.getInstance()
+                    if (currentTime.get(Calendar.HOUR_OF_DAY) == 12) {
+                        RenewFire.launch {
+                            Bot.instances.forEach { bot ->
+                                if (settings[bot.id.toString()] !== null) {
+                                    settings[bot.id.toString()]?.forEach { (key, value) ->
+                                        bot.getFriend(key.toLong())?.sendMessage(value)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
-
     }
 }

@@ -48,8 +48,10 @@ jobs:
       # 8. Compress Source Code and Upload to Release
       - name: Compress Source Code and Upload
         run: |
-          tar -czf "Source code.tar.gz" .
-          zip -r "Source code.zip" .
+          mkdir -p release-source
+          cp -r * release-source/  # Copy everything into the new directory
+          tar -czf "release-source/Source code.tar.gz" -C release-source .
+          zip -r "release-source/Source code.zip" release-source/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -65,3 +67,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_NAME: ${{ env.VERSION }}
           TAG_NAME: v${{ env.VERSION }}
+
+      # 10. Clean up release-source directory
+      - name: Clean up release-source directory
+        run: rm -rf release-source

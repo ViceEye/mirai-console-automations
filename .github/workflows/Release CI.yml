@@ -2,12 +2,19 @@ name: Release CI
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name for this release'
+        required: true
 
 jobs:
   release:
 
     name: Build and Release Plugin
     runs-on: ubuntu-latest
+
+    env:
+      VERSION: ${{ github.event.inputs.tag }}
 
     steps:
       # 1. Checkout the repository
@@ -24,7 +31,7 @@ jobs:
 
       # 3. Gradle Wrapper Validation
       - name: Gradle Wrapper Validation
-        uses: gradle/wrapper-validation-action@v1.0.5
+        uses: gradle/actions/wrapper-validation@v3
 
       # 4. Make gradlew executable
       - name: Make gradlew executable
@@ -38,28 +45,28 @@ jobs:
       - name: Build Mirai Plugin
         run: ./gradlew buildPlugin
 
-      # 7. Read version from build.gradle.kts
-      - name: Get Version from build.gradle.kts
-        id: version
-        run: |
-          VERSION=$(grep 'version =' build.gradle.kts | awk '{print $3}' | tr -d '"')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-      # 8. Compress Source Code and Upload to Release
+      # 7. Compress Source Code and Upload to Release
       - name: Create Source Code Archives
         run: |
           git archive --format=tar.gz -o "Source code.tar.gz" HEAD
           git archive --format=zip -o "Source code.zip" HEAD
 
+      # 8. Create Git Release Tag
+      - name: Create Git Tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag $VERSION
+          git push origin $VERSION
+
       # 9. Create Release and Upload Artifacts
       - name: Create Release and Upload Artifacts
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
           files: |
             build/mirai/*.jar
-            "Source code.zip"
-            "Source code.tar.gz"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_NAME: ${{ env.VERSION }}
-          TAG_NAME: v${{ env.VERSION }}
+            Source code.zip
+            Source code.tar.gz
+          overwrite: true

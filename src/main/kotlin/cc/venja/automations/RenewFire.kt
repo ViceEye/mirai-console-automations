@@ -10,14 +10,13 @@ import net.mamoe.mirai.event.GlobalEventChannel
 import net.mamoe.mirai.event.events.BotOnlineEvent
 import net.mamoe.mirai.utils.info
 import java.util.*
-import kotlin.concurrent.scheduleAtFixedRate
 
 
 object RenewFire : KotlinPlugin(
         JvmPluginDescription(
                 id = "cc.venja.automations",
                 name = "自动续火QwQ",
-                version = "0.1.0",
+                version = "0.3.0",
         ) {
 
             author("Kazi")
@@ -54,20 +53,41 @@ object RenewFire : KotlinPlugin(
                 // When server running
 
                 val timer = Timer("FireRenewTimer", true)
-                timer.scheduleAtFixedRate(0, (0.5 * 60 * 60 * 1000).toLong()) { // 每0.5小时执行一次
-                    val currentTime = Calendar.getInstance()
-                    if (currentTime.get(Calendar.HOUR_OF_DAY) == 12) {
+                val now = Calendar.getInstance()
+                val firstTime = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 18)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+
+                val interval = 24 * 60 * 60 * 1000L // 每 24 小时
+
+                if (now.after(firstTime)) {
+                    // 已过今天18点：先立即执行一次
+                    RenewFire.launch {
+                        Bot.instances.forEach { bot ->
+                            settings[bot.id.toString()]?.forEach { (key, value) ->
+                                bot.getFriend(key.toLong())?.sendMessage(value)
+                            }
+                        }
+                    }
+                    // 下一次定时是明天 18:00
+                    firstTime.add(Calendar.DAY_OF_YEAR, 1)
+                }
+
+                // 启动定时器，从 firstTime 开始，每 24 小时执行一次
+                timer.scheduleAtFixedRate(object : TimerTask() {
+                    override fun run() {
                         RenewFire.launch {
                             Bot.instances.forEach { bot ->
-                                if (settings[bot.id.toString()] !== null) {
-                                    settings[bot.id.toString()]?.forEach { (key, value) ->
-                                        bot.getFriend(key.toLong())?.sendMessage(value)
-                                    }
+                                settings[bot.id.toString()]?.forEach { (key, value) ->
+                                    bot.getFriend(key.toLong())?.sendMessage(value)
                                 }
                             }
                         }
                     }
-                }
+                }, firstTime.time, interval)
             }
         }
     }

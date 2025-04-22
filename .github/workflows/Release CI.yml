@@ -46,14 +46,10 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       # 8. Compress Source Code and Upload to Release
-      - name: Compress Source Code and Upload
+      - name: Create Source Code Archives
         run: |
-          mkdir -p release-source
-          cp -r * release-source/  # Copy everything into the new directory
-          tar -czf "release-source/Source code.tar.gz" -C release-source .
-          zip -r "release-source/Source code.zip" release-source/
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git archive --format=tar.gz -o "Source code.tar.gz" HEAD
+          git archive --format=zip -o "Source code.zip" HEAD
 
       # 9. Create Release and Upload Artifacts
       - name: Create Release and Upload Artifacts
@@ -67,7 +63,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_NAME: ${{ env.VERSION }}
           TAG_NAME: v${{ env.VERSION }}
-
-      # 10. Clean up release-source directory
-      - name: Clean up release-source directory
-        run: rm -rf release-source
